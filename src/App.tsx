@@ -34,6 +34,7 @@ export default function App() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
   // Persistence
   useEffect(() => {
@@ -57,7 +58,7 @@ export default function App() {
     let initialContent: any = '';
     
     if (type === 'subtitle') initialContent = 'Sottotitolo del capitolo';
-    if (type === 'list') initialContent = ['Nuovo elemento'];
+    if (type === 'list') initialContent = '<ul><li>Nuovo elemento</li></ul>';
     if (type === 'grammar-breakdown') initialContent = [{ char: '', phonetic: '' }];
     if (type === 'table') initialContent = [['Intestazione 1', 'Intestazione 2'], ['Dato 1', 'Dato 2']];
     if (type === 'text') initialContent = 'Inizia a scrivere qui...';
@@ -112,6 +113,12 @@ export default function App() {
     a.download = `${book.title.replace(/\s+/g, '_')}_grammar_book.html`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const stripHtml = (html: string) => {
+    if (!html) return "";
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || doc.body.innerText || "";
   };
 
   return (
@@ -186,7 +193,7 @@ export default function App() {
                       )}
                     >
                       <ChevronRight className={cn("w-3 h-3 text-slate-300 group-hover:text-indigo-500 transition-colors", b.type === 'title' ? "rotate-90" : "")} />
-                      <span className="truncate">{b.content || 'Untitled'}</span>
+                      <span className="truncate max-w-[200px] inline-block">{stripHtml(b.content) || 'Untitled'}</span>
                     </a>
                   ))}
               </div>
@@ -206,20 +213,27 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 overflow-y-auto canvas-area scroll-smooth bg-slate-100/50 relative pt-24 pb-40">
-        <div className="max-w-[850px] mx-auto w-full bg-white shadow-[0_0_80px_-20px_rgba(0,0,0,0.12)] min-h-[1200px] rounded-[3rem] border border-slate-200 p-12 lg:p-32 relative overflow-visible book-canvas">
+      <main className="flex-1 overflow-y-auto canvas-area scroll-smooth bg-slate-100/50 relative pt-24 pb-40 px-2 md:px-0">
+        <div className="max-w-[850px] mx-auto w-full bg-white shadow-[0_0_80px_-20px_rgba(0,0,0,0.12)] min-h-[1200px] rounded-[1.5rem] md:rounded-[3rem] border border-slate-200 p-4 md:p-16 lg:p-32 relative book-canvas break-words">
           {/* Vertical Spine Line */}
           <div className="canvas-spine hidden lg:block" />
 
           {book.blocks.map((block, index) => (
             <div key={block.id} className="relative group/block">
-              <div id={`block-${block.id}`} className="scroll-mt-32">
-                <BlockRenderer
-                  block={block}
-                  updateBlock={updateBlock}
-                  removeBlock={removeBlock}
-                />
-              </div>
+                <div id={`block-${block.id}`} 
+                    className={cn(
+                      "scroll-mt-32 rounded-[2rem] transition-all relative",
+                      selectedBlockId === block.id ? "ring-4 ring-indigo-500/10 bg-slate-50/50" : "hover:bg-slate-50/30"
+                    )}
+                    onClick={() => setSelectedBlockId(block.id)}
+                >
+                  <BlockRenderer
+                    block={block}
+                    updateBlock={updateBlock}
+                    removeBlock={removeBlock}
+                    isSelected={selectedBlockId === block.id}
+                  />
+                </div>
               
               {/* Add Block Between button */}
               <div className="absolute -bottom-6 left-0 right-0 z-40 flex flex-col items-center gap-2">
@@ -294,6 +308,8 @@ export default function App() {
               onAddBlock={(type, meta) => addBlock(type, undefined, meta)} 
               onPreview={() => setIsPreviewOpen(true)}
               onExport={handleExport}
+              activeBlock={book.blocks.find(b => b.id === selectedBlockId)}
+              updateBlock={updateBlock}
             />
           </motion.div>
         )}
@@ -307,13 +323,13 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-zinc-950/90 backdrop-blur-sm overflow-y-auto p-4 lg:p-20 flex justify-center"
+            className="fixed inset-0 z-50 bg-zinc-950/90 backdrop-blur-sm overflow-y-auto p-2 md:p-10 lg:p-20 flex justify-center"
           >
             <motion.div 
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              className="bg-white w-full max-w-5xl rounded-[40px] shadow-2xl relative h-fit min-h-screen mb-20 flex overflow-hidden"
+              className="bg-white w-full max-w-5xl rounded-[2rem] md:rounded-[40px] shadow-2xl relative h-fit min-h-screen mb-20 flex overflow-visible"
             >
               <aside className="w-64 border-r border-slate-50 p-12 sticky top-0 h-screen hidden lg:block bg-slate-50/30 backdrop-blur-sm">
                 <nav className="space-y-6">
@@ -329,14 +345,14 @@ export default function App() {
                           b.type === 'title' ? "font-black text-slate-900" : "font-medium text-slate-400 pl-4 border-l border-slate-100"
                         )}
                       >
-                        {b.content || 'Untitled'}
+                        {stripHtml(b.content) || 'Untitled'}
                       </a>
                     ))}
                 </nav>
               </aside>
 
-              <div className="flex-1 p-12 lg:p-24 relative">
-                <div className="flex justify-end mb-12">
+              <div className="flex-1 p-4 md:p-12 lg:p-24 relative break-words overflow-x-hidden">
+                <div className="flex justify-end mb-4 md:mb-12">
                   <button 
                     onClick={() => setIsPreviewOpen(false)}
                     className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-full transition-all shadow-sm"
@@ -345,74 +361,123 @@ export default function App() {
                   </button>
                 </div>
 
-                <div className="max-w-3xl mx-auto py-20">
+                <div className="max-w-3xl mx-auto py-10 md:py-20 px-0 md:px-4">
                   <div className="space-y-16">
                     {book.blocks.map((block, i) => {
+                      const getFontSizeClass = (size?: string) => {
+                        switch (size) {
+                          case 'small': return 'text-lg';
+                          case 'medium': return 'text-xl';
+                          case 'large': return 'text-2xl';
+                          case 'xl': return 'text-4xl';
+                          default: return 'text-xl';
+                        }
+                      };
+
+                      const textStyle = cn(
+                        getFontSizeClass(block.metadata?.fontSize),
+                        block.metadata?.textColor
+                      );
+
                       const renderPreviewBlock = (b: Block) => {
                         switch (b.type) {
-                          case 'title': return <h1 id={`section-${i}`} className="text-6xl font-serif font-black text-slate-900 italic tracking-tight">{b.content}</h1>;
-                          case 'subtitle': return <h2 id={`section-${i}`} className="text-3xl font-serif font-bold text-slate-800 mt-20 mb-8 pb-4 border-b border-slate-100">{b.content}</h2>;
-                          case 'text': return <p className="font-serif text-xl leading-relaxed text-slate-700">{b.content}</p>;
+                          case 'title': return (
+                            <h1 id={`section-${i}`} className="font-serif font-black italic tracking-tight transition-all text-3xl md:text-4xl text-slate-900 leading-tight mb-6 md:mb-8 break-words"
+                            dangerouslySetInnerHTML={{ __html: b.content }}
+                            />
+                          );
+                          case 'subtitle': return (
+                            <h2 id={`section-${i}`} className="font-serif font-bold mt-8 md:mt-12 mb-4 pb-2 border-b-2 border-slate-100 transition-all text-xl md:text-2xl text-slate-800 break-words"
+                            dangerouslySetInnerHTML={{ __html: b.content }}
+                            />
+                          );
+                          case 'text': return (
+                            <div 
+                              className="font-serif leading-relaxed transition-all rich-text-content text-base md:text-lg text-slate-800 break-words"
+                              dangerouslySetInnerHTML={{ __html: b.content }}
+                            />
+                          );
                           case 'list': 
-                            if (!Array.isArray(b.content)) return null;
                             return (
-                              <ul className="list-disc list-inside space-y-4 text-slate-700 font-serif text-xl">
-                                {(b.content as string[]).map((it, idx) => <li key={idx} className="pl-4">{it}</li>)}
-                              </ul>
+                              <div className="rich-text-content font-serif transition-all text-base md:text-lg text-slate-800 break-words"
+                              dangerouslySetInnerHTML={{ __html: b.content }}
+                              />
                             );
                           case 'box': return (
-                            <div className={cn("p-10 rounded-3xl border-l-[12px] shadow-sm", 
+                            <div className={cn("p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border-l-4 md:border-l-8 shadow-lg transition-all my-4 md:my-6", 
                               b.metadata?.variant === 'warning' ? "bg-amber-50 border-amber-400" :
-                              b.metadata?.variant === 'tip' ? "bg-indigo-50 border-indigo-400" : "bg-blue-50 border-blue-400"
+                              b.metadata?.variant === 'tip' ? "bg-emerald-50 border-emerald-400" : 
+                              "bg-indigo-50 border-indigo-400"
                             )}>
-                              <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-4">{b.metadata?.variant || 'Note'}</div>
-                              <div className="font-serif text-xl leading-relaxed">{b.content}</div>
+                              <div className={cn("text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] mb-3 md:mb-4 flex items-center gap-2",
+                                b.metadata?.variant === 'warning' ? "text-amber-600" :
+                                b.metadata?.variant === 'tip' ? "text-emerald-600" : 
+                                "text-indigo-600"
+                              )}>
+                                <span className={cn("w-2 h-2 rounded-full animate-pulse",
+                                  b.metadata?.variant === 'warning' ? "bg-amber-400" :
+                                  b.metadata?.variant === 'tip' ? "bg-emerald-400" : 
+                                  "bg-indigo-400"
+                                )} />
+                                {b.metadata?.variant === 'warning' ? 'Importante' : b.metadata?.variant === 'tip' ? 'Consiglio' : 'Nota'}
+                              </div>
+                              <div className="font-serif leading-relaxed transition-all text-base md:text-lg font-medium text-slate-800 break-words"
+                              dangerouslySetInnerHTML={{ __html: b.content }}
+                              />
                             </div>
                           );
                           case 'citation': return (
-                            <div className="relative py-8">
-                              <Quote className="absolute -top-4 -left-8 w-16 h-16 text-slate-100 -z-10" />
-                              <blockquote className="pl-12 italic font-serif text-2xl text-slate-600 leading-relaxed">{b.content}</blockquote>
+                            <div className="relative py-6 md:py-10 my-6 md:my-8">
+                              <Quote className="absolute -top-2 md:-top-4 -left-1 md:-left-10 w-8 h-8 md:w-20 md:h-20 text-slate-50 -z-10" />
+                              <blockquote className="pl-4 md:pl-12 italic font-serif leading-relaxed border-l-4 border-slate-100 transition-all text-lg md:text-3xl text-slate-600 break-words"
+                              dangerouslySetInnerHTML={{ __html: b.content }}
+                              />
                             </div>
                           );
                           case 'post-it': return (
-                            <div className={cn("p-10 shadow-2xl w-80 max-w-full font-sans text-sm rotate-1 transform-gpu", 
+                            <div className={cn("p-6 md:p-8 shadow-xl w-full max-w-[280px] md:w-72 font-sans rotate-1 transform-gpu transition-all my-6 md:my-8 mx-auto md:mx-0", 
                               b.metadata?.color === 'pink' ? "bg-pink-100" : b.metadata?.color === 'blue' ? "bg-sky-100" : "bg-amber-100"
                             )}>
-                              <div className="w-8 h-8 bg-black/5 rounded-full mb-4 shadow-inner" />
-                              <p className="text-slate-800 leading-relaxed font-medium italic underline decoration-slate-300 decoration-2">{b.content}</p>
+                              <div className="w-6 h-6 md:w-8 md:h-8 bg-black/5 rounded-full mb-4 shadow-inner" />
+                              <div className="leading-relaxed italic underline decoration-slate-300/50 decoration-2 underline-offset-8 transition-all text-base md:text-lg font-medium text-slate-800 break-words"
+                              dangerouslySetInnerHTML={{ __html: b.content }}
+                              />
                             </div>
                           );
                           case 'grammar-breakdown': 
                             if (!Array.isArray(b.content)) return null;
                             return (
-                              <div className="bg-slate-50 p-10 rounded-[40px] border border-slate-100 flex flex-wrap gap-8 shadow-inner">
+                              <div className="bg-white p-4 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border-2 border-slate-100 flex flex-wrap gap-4 md:gap-6 shadow-sm my-6 md:my-8 justify-center italic overflow-x-auto">
                                 {(b.content as any[]).map((it, idx) => (
-                                  <div key={idx} className="flex flex-col items-center">
-                                    <span className="text-sm font-mono text-indigo-500 mb-2 font-bold opacity-60 tracking-tighter">{it.phonetic}</span>
-                                    <span className="text-5xl font-serif text-slate-900 font-bold">{it.char}</span>
+                                  <div key={idx} className="flex flex-col items-center gap-1 min-w-[50px] md:min-w-[60px]">
+                                    <span className="text-[9px] md:text-sm font-mono text-indigo-600 font-black tracking-tighter opacity-80 uppercase">{it.phonetic}</span>
+                                    <span className="text-3xl md:text-6xl font-serif text-slate-900 font-bold leading-none">{it.char}</span>
                                   </div>
                                 ))}
                               </div>
                             );
-                          case 'image': return b.content ? <img src={b.content} className="w-full rounded-[40px] shadow-2xl" alt="" /> : null;
+                          case 'image': return b.content ? <img src={b.content} className="w-full rounded-[2rem] shadow-xl my-8" alt="" /> : null;
                           case 'table': 
                             if (!Array.isArray(b.content) || b.content.length === 0) return null;
                             const tableRows = b.content as string[][];
                             return (
-                              <div className="overflow-hidden rounded-3xl border border-slate-200">
-                                <table className="w-full border-collapse">
+                              <div className="overflow-x-auto rounded-[1rem] md:rounded-[1.5rem] border-2 border-slate-200 my-8 shadow-lg">
+                                <table className="w-full border-collapse min-w-[400px]">
                                   <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-200">
+                                    <tr className="bg-slate-50 border-b-2 border-slate-200">
                                       {tableRows[0].map((cell, idx) => (
-                                        <th key={idx} className="p-4 text-left text-xs font-black uppercase tracking-widest text-slate-400">{cell}</th>
+                                        <th key={idx} className="p-3 md:p-4 text-left text-[9px] md:text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">{cell}</th>
                                       ))}
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {tableRows.slice(1).map((row, rIdx) => (
                                       <tr key={rIdx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
-                                        {row.map((cell, cIdx) => <td key={cIdx} className="p-4 font-serif text-lg text-slate-700">{cell}</td>)}
+                                        {row.map((cell, cidx) => (
+                                          <td key={cidx} className="p-3 md:p-4 font-serif transition-all text-base md:text-lg text-slate-700">
+                                            {cell}
+                                          </td>
+                                        ))}
                                       </tr>
                                     ))}
                                   </tbody>
@@ -420,13 +485,13 @@ export default function App() {
                               </div>
                             );
                           case 'audio': return (
-                            <div className="bg-slate-900 p-8 rounded-full flex items-center gap-6 shadow-xl">
+                            <div className="bg-slate-900 p-8 rounded-full flex items-center gap-6 shadow-xl my-8">
                               <div className="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center text-white"><Volume2 className="w-6 h-6" /></div>
                               <audio controls src={b.content} className="flex-1 contrast-125 invert" />
                             </div>
                           );
                           case 'video': return (
-                            <div className="rounded-[40px] overflow-hidden shadow-2xl bg-black aspect-video">
+                            <div className="rounded-[2.5rem] overflow-hidden shadow-2xl bg-black aspect-video my-8">
                               <video controls src={b.content} className="w-full h-full" />
                             </div>
                           );

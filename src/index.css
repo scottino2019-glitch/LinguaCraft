@@ -11,6 +11,29 @@
   body {
     @apply bg-slate-100 text-slate-800 font-sans;
   }
+  .rich-text-content p {
+    margin-bottom: 0.75rem;
+    overflow-wrap: anywhere;
+  }
+  .rich-text-content {
+    overflow-wrap: anywhere;
+  }
+  .rich-text-content p:last-child {
+    margin-bottom: 0;
+  }
+  .rich-text-content ul {
+    list-style-type: disc !important;
+    padding-left: 1.5rem !important;
+    margin-bottom: 1rem;
+  }
+  .rich-text-content ol {
+    list-style-type: decimal !important;
+    padding-left: 1.5rem !important;
+    margin-bottom: 1rem;
+  }
+  .rich-text-content li {
+    margin-bottom: 0.5rem;
+  }
 }
 
 .book-canvas {

@@ -18,8 +18,10 @@ export interface Block {
   content: any;
   metadata?: {
     variant?: string; // e.g., 'note', 'warning', 'tip' for boxes
-    color?: string; // for post-its
+    color?: string; // for post-its or text
     language?: string; // for grammar-breakdown
+    fontSize?: string; // e.g., 'small', 'medium', 'large', 'xl'
+    textColor?: string; // hex or tailwind class
   };
 }
 

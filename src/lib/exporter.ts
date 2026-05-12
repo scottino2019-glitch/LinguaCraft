@@ -4,15 +4,15 @@ export function exportBookToHTML(book: Book): string {
   const renderBlock = (block: Block) => {
     switch (block.type) {
       case 'title':
-        return `<h1 class="text-5xl font-serif font-bold mb-8 text-zinc-900">${block.content}</h1>`;
+        return `<h1 class="text-3xl md:text-5xl font-serif font-bold mb-6 md:mb-8 text-zinc-900 break-words">${block.content}</h1>`;
       case 'subtitle':
-        return `<h2 class="text-3xl font-serif font-semibold mt-12 mb-6 text-zinc-800">${block.content}</h2>`;
+        return `<h2 class="text-2xl md:text-3xl font-serif font-semibold mt-8 md:mt-12 mb-4 md:mb-6 text-zinc-800 break-words">${block.content}</h2>`;
       case 'text':
-        return `<p class="font-serif text-lg leading-relaxed text-zinc-700 mb-6">${block.content.replace(/\n/g, '<br>')}</p>`;
+        return `<div class="font-serif text-base md:text-lg leading-relaxed text-zinc-700 mb-6 break-words">${block.content}</div>`;
       case 'list':
-        return `<ul class="list-disc list-inside space-y-2 mb-6 text-zinc-700 font-serif text-lg">
-          ${(block.content as string[]).map(item => `<li>${item}</li>`).join('')}
-        </ul>`;
+        return `<div class="mb-6 text-zinc-700 font-serif text-base md:text-lg break-words">
+          ${block.content}
+        </div>`;
       case 'box':
         const variant = block.metadata?.variant || 'note';
         const colors = variant === 'warning' ? 'bg-amber-50 border-amber-400 text-amber-900' :
@@ -44,12 +44,12 @@ export function exportBookToHTML(book: Book): string {
           <video controls src="${block.content}" class="w-full aspect-video">Your browser does not support video.</video>
         </div>`;
       case 'citation':
-        return `<blockquote class="border-l-2 border-zinc-300 pl-8 py-4 italic font-serif text-xl text-zinc-600 mb-8">${block.content}</blockquote>`;
+        return `<blockquote class="border-l-4 border-zinc-200 pl-4 md:pl-8 py-4 italic font-serif text-lg md:text-2xl text-zinc-600 mb-8 break-words">${block.content}</blockquote>`;
       case 'post-it':
         const color = block.metadata?.color || 'yellow';
         const bgColor = color === 'pink' ? 'bg-pink-100' : color === 'blue' ? 'bg-sky-100' : 'bg-yellow-50';
-        return `<div class="p-8 ${bgColor} shadow-lg w-64 max-w-full font-sans text-sm mb-8 rotate-[-1deg] inline-block mr-4">
-          ${block.content.replace(/\n/g, '<br>')}
+        return `<div class="p-6 md:p-8 ${bgColor} shadow-lg w-full max-w-[280px] md:w-64 font-sans text-sm mb-8 rotate-[-1deg] inline-block mr-4 break-words">
+          ${block.content}
         </div>`;
       case 'image':
         return block.content ? `<img src="${block.content}" class="w-full rounded-xl shadow-lg mb-8" alt="Illustration" />` : '';
@@ -172,8 +172,8 @@ export function exportBookToHTML(book: Book): string {
         <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[55] hidden lg:hidden"></div>
 
         <!-- Main Content Area -->
-        <main class="flex-1 px-4 py-24 lg:py-32 lg:px-20 overflow-x-hidden">
-            <article class="max-w-3xl mx-auto bg-white p-8 lg:p-20 rounded-[40px] shadow-sm border border-slate-100 relative">
+        <main class="flex-1 px-2 py-20 lg:py-32 lg:px-20 overflow-x-hidden">
+            <article class="max-w-3xl mx-auto bg-white p-4 md:p-12 lg:p-20 rounded-3xl md:rounded-[40px] shadow-sm border border-slate-100 relative break-words overflow-hidden">
                 <!-- Spine for visual flow -->
                 <div class="spine lg:block hidden"></div>
                 

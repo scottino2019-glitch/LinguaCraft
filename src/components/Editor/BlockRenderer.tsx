@@ -12,189 +12,366 @@ import {
   GripVertical, 
   Trash2, 
   Plus,
-  Languages
+  Languages,
+  Settings2
 } from 'lucide-react';
 import { Block, BlockType } from '../../types';
 import { cn } from '../../lib/utils';
-import { motion, Reorder } from 'motion/react';
+import { motion, Reorder, AnimatePresence } from 'motion/react';
+
+import ReactQuill, { Quill } from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+
+// Configure Quill to use inline styles for colors and fonts
+const Size = Quill.import('attributors/style/size') as any;
+Size.whitelist = ['14px', '16px', '18px', '20px', '24px', '32px', '40px', '48px', '64px'];
+Quill.register(Size, true);
+
+const Color = Quill.import('attributors/style/color') as any;
+Quill.register(Color, true);
 
 interface BlockRendererProps {
   block: Block;
   updateBlock: (id: string, updates: Partial<Block>) => void;
   removeBlock: (id: string) => void;
+  isSelected?: boolean;
 }
 
-export const BlockRenderer: React.FC<BlockRendererProps> = ({ 
+export const BlockRenderer = React.memo<BlockRendererProps>(({ 
   block, 
   updateBlock, 
-  removeBlock 
+  removeBlock,
+  isSelected
 }) => {
   const handleChange = (content: any) => {
     updateBlock(block.id, { content });
+  };
+
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  const adjustHeight = (el: HTMLTextAreaElement) => {
+    el.style.height = 'auto';
+    el.style.height = (el.scrollHeight) + 'px';
+  };
+
+  const getFontSizeClass = (size?: string) => {
+    switch (size) {
+      case 'small': return 'text-lg';
+      case 'medium': return 'text-xl';
+      case 'large': return 'text-2xl';
+      case 'xl': return 'text-4xl';
+      default: return 'text-xl'; 
+    }
   };
 
   const renderEditor = () => {
     switch (block.type) {
       case 'title':
         return (
-          <input
-            type="text"
-            className="w-full text-4xl font-serif font-semibold bg-transparent border-none focus:outline-none focus:ring-0 placeholder:opacity-30"
-            value={block.content}
-            onChange={(e) => handleChange(e.target.value)}
-            placeholder="Book Title..."
-          />
+          <div className="rich-text-editor group/quill relative">
+            <ReactQuill 
+              theme="snow"
+              value={block.content || ''}
+              onChange={handleChange}
+              placeholder="Titolo della Lezione..."
+              modules={{
+                toolbar: [
+                  [{ 'size': ['18px', '24px', '32px', '40px'] }],
+                  ['bold', 'italic', 'underline'],
+                  [{ 'color': [] }],
+                  ['clean']
+                ]
+              }}
+              className="font-serif text-3xl md:text-4xl font-black italic tracking-tight text-slate-900"
+            />
+          </div>
         );
       case 'subtitle':
         return (
-          <input
-            type="text"
-            className="w-full text-2xl font-serif font-medium text-zinc-600 bg-transparent border-none focus:outline-none focus:ring-0 placeholder:opacity-30"
-            value={block.content}
-            onChange={(e) => handleChange(e.target.value)}
-            placeholder="Chapter or Section..."
-          />
+          <div className="rich-text-editor group/quill relative">
+            <ReactQuill 
+              theme="snow"
+              value={block.content || ''}
+              onChange={handleChange}
+              placeholder="Sottotitolo..."
+              modules={{
+                toolbar: [
+                  [{ 'size': ['16px', '18px', '20px', '24px'] }],
+                  ['bold', 'italic'],
+                  [{ 'color': [] }],
+                  ['clean']
+                ]
+              }}
+              className="font-serif text-xl md:text-2xl font-bold tracking-tight text-slate-700 border-b border-slate-100 pb-2"
+            />
+          </div>
         );
       case 'text':
         return (
-          <textarea
-            className="w-full min-h-[50px] leading-relaxed bg-transparent border-none focus:outline-none focus:ring-0 resize-none font-serif text-lg"
-            value={block.content}
-            onChange={(e) => {
-              handleChange(e.target.value);
-              e.target.style.height = 'auto';
-              e.target.style.height = e.target.scrollHeight + 'px';
-            }}
-            placeholder="Write your grammar explanation here..."
-          />
+          <div className="rich-text-editor group/quill relative">
+            <ReactQuill 
+              theme="snow"
+              value={block.content || ''}
+              onChange={handleChange}
+              placeholder="Inizia a scrivere la lezione..."
+              modules={{
+                toolbar: [
+                  [{ 'header': [1, 2, 3, false] }],
+                  [{ 'size': ['14px', '16px', '18px', '20px'] }],
+                  ['bold', 'italic', 'underline', 'strike'],
+                  [{ 'color': [] }, { 'background': [] }],
+                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                  ['clean']
+                ]
+              }}
+              className="font-serif text-lg md:text-xl text-slate-800"
+            />
+            <style>{`
+              .rich-text-editor .ql-container {
+                border: none !important;
+                font-family: inherit;
+              }
+              .rich-text-editor .ql-editor {
+                padding: 10px 0;
+                min-height: 40px;
+                line-height: 1.6;
+                font-size: 1.125rem;
+              }
+              @media (min-width: 768px) {
+                .rich-text-editor .ql-editor {
+                  padding: 12px 0;
+                  font-size: 1.25rem;
+                }
+              }
+              .rich-text-editor .ql-toolbar {
+                border: 1px solid #e2e8f0 !important;
+                padding: 4px !important;
+                background: white;
+                border-radius: 8px;
+                margin-bottom: 8px;
+                position: absolute;
+                top: -42px;
+                left: 0;
+                z-index: 50;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.2s ease;
+                box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+              }
+              .rich-text-editor:hover .ql-toolbar,
+              .rich-text-editor:focus-within .ql-toolbar {
+                opacity: 1;
+                visibility: visible;
+                top: -48px;
+              }
+              /* Fix picker labels showing "Normal" */
+              .ql-snow .ql-picker.ql-size .ql-picker-label::before,
+              .ql-snow .ql-picker.ql-size .ql-picker-item::before {
+                content: attr(data-value) !important;
+              }
+              .ql-snow .ql-picker.ql-size .ql-picker-label {
+                padding-right: 18px !important;
+                width: auto !important;
+                min-width: 60px;
+              }
+              .rich-text-editor .ql-editor.ql-blank::before {
+                left: 0;
+                font-style: italic;
+                opacity: 0.3;
+                font-size: 0.9em;
+              }
+              .ql-editor p {
+                font-size: inherit;
+              }
+              .ql-toolbar button {
+                width: 28px !important;
+                height: 28px !important;
+                padding: 4px !important;
+              }
+              .ql-toolbar .ql-picker {
+                height: 28px !important;
+                line-height: 28px !important;
+              }
+              .ql-toolbar .ql-picker-label {
+                padding-left: 4px !important;
+                padding-right: 4px !important;
+              }
+              .rich-text-editor.table-cell-editor .ql-editor {
+                padding: 12px;
+                min-height: 48px;
+                font-size: 1.125rem;
+              }
+              .rich-text-editor.table-cell-editor .ql-toolbar {
+                top: -36px;
+                left: 0;
+                transform: scale(0.65);
+                transform-origin: left bottom;
+                z-index: 60;
+                min-width: 120px;
+              }
+              .rich-text-editor.table-cell-editor .ql-container {
+                min-width: 0;
+              }
+            `}</style>
+          </div>
         );
       case 'list':
-        if (!Array.isArray(block.content)) return <div className="text-red-400">Puntatori corrotti - Reinizializzare blocco</div>;
         return (
-          <div className="space-y-1">
-            {(block.content as string[]).map((item, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <span className="text-zinc-400">•</span>
-                <input
-                  type="text"
-                  className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 py-1"
-                  value={item}
-                  onChange={(e) => {
-                    const newList = [...(block.content as string[])];
-                    newList[idx] = e.target.value;
-                    handleChange(newList);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const newList = [...(block.content as string[])];
-                      newList.splice(idx + 1, 0, '');
-                      handleChange(newList);
-                    }
-                    if (e.key === 'Backspace' && item === '' && (block.content as string[]).length > 1) {
-                      e.preventDefault();
-                      const newList = [...(block.content as string[])];
-                      newList.splice(idx, 1);
-                      handleChange(newList);
-                    }
-                  }}
-                />
-              </div>
-            ))}
+          <div className="rich-text-editor group/quill relative">
+            <ReactQuill 
+              theme="snow"
+              value={block.content || ''}
+              onChange={handleChange}
+              placeholder="Inserisci elementi della lista..."
+              modules={{
+                toolbar: [
+                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                  [{ 'size': ['14px', '16px', '18px', '20px', '24px'] }],
+                  ['bold', 'italic'],
+                  [{ 'color': [] }],
+                  ['clean']
+                ]
+              }}
+              className="font-serif text-xl text-slate-800"
+            />
           </div>
         );
       case 'box':
         return (
           <div className={cn(
-            "p-4 rounded-lg border-l-4",
+            "p-5 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border-l-[8px] md:border-l-[12px] transition-all",
             block.metadata?.variant === 'warning' ? "bg-amber-50 border-amber-400" :
             block.metadata?.variant === 'tip' ? "bg-emerald-50 border-emerald-400" :
             "bg-blue-50 border-blue-400"
           )}>
-            <div className="flex items-center gap-2 mb-2">
-              <Box className="w-4 h-4 opacity-50" />
-              <div className="flex gap-2">
-                {['note', 'tip', 'warning'].map(v => (
+            <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-4 md:mb-6">
+              <Box className="w-4 h-4 md:w-5 md:h-5 opacity-30" />
+              <div className="flex flex-wrap gap-1 md:gap-2">
+                {[
+                  { id: 'note', label: 'Nota', color: 'bg-blue-400' },
+                  { id: 'tip', label: 'Consiglio', color: 'bg-emerald-400' },
+                  { id: 'warning', label: 'Importante', color: 'bg-amber-400' }
+                ].map(v => (
                   <button 
-                    key={v}
-                    onClick={() => updateBlock(block.id, { metadata: { ...block.metadata, variant: v } })}
+                    key={v.id}
+                    onClick={() => updateBlock(block.id, { metadata: { ...block.metadata, variant: v.id } })}
                     className={cn(
-                      "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider transition-all",
-                      (block.metadata?.variant || 'note') === v ? "bg-black text-white" : "bg-black/5 text-black/40 hover:bg-black/10"
+                      "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all border-2",
+                      (block.metadata?.variant || 'note') === v.id 
+                        ? "bg-white border-transparent shadow-md text-slate-900 scale-105" 
+                        : "bg-transparent border-slate-200 text-slate-400 hover:border-slate-300"
                     )}
                   >
-                    {v}
+                    {v.label}
                   </button>
                 ))}
               </div>
             </div>
-            <textarea
-              className="w-full bg-transparent border-none focus:outline-none focus:ring-0 resize-none font-medium"
-              value={block.content}
-              onChange={(e) => handleChange(e.target.value)}
-              placeholder="Important information..."
-            />
+            <div className="rich-text-editor">
+              <ReactQuill 
+                theme="snow"
+                value={block.content || ''}
+                onChange={handleChange}
+                modules={{
+                  toolbar: [
+                    [{ 'size': ['14px', '16px', '18px', '20px', '24px', '32px', '40px', '48px'] }],
+                    ['bold', 'italic', 'underline'],
+                    [{ 'color': [] }],
+                    ['clean']
+                  ]
+                }}
+                className="font-serif text-xl font-medium text-slate-800"
+              />
+            </div>
           </div>
         );
       case 'table':
-        if (!Array.isArray(block.content)) return <div className="text-red-400">Tabella corrotta</div>;
-        const rows = block.content as string[][];
+        const tableData = Array.isArray(block.content) ? block.content : [['', '']];
+        const rows = tableData as string[][];
+
         return (
-          <div className="overflow-x-auto border border-zinc-200 rounded-xl">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto border-2 border-zinc-200 rounded-2xl md:rounded-3xl bg-white shadow-xl">
+            <table className="w-full border-collapse min-w-[400px]">
               <tbody className="divide-y divide-zinc-200">
                 {rows.map((row, rIdx) => (
-                  <tr key={rIdx} className="divide-x divide-zinc-200">
-                    {row.map((cell, cIdx) => (
-                      <td key={cIdx} className="p-0">
-                        <input
-                          type="text"
-                          className="w-full p-3 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 transition-all font-serif"
-                          value={cell}
+                  <tr key={rIdx} className="group/row divide-x divide-zinc-200">
+                    {Array.isArray(row) && row.map((cell, cIdx) => (
+                      <td key={cIdx} className="p-0 min-w-[150px]">
+                        <textarea
+                          className="w-full p-4 bg-transparent border-none focus:outline-none focus:ring-4 focus:ring-inset focus:ring-indigo-500/10 transition-all font-serif text-lg md:text-xl text-slate-700 resize-none overflow-hidden block"
+                          value={cell || ''}
+                          rows={1}
+                          placeholder="..."
+                          onInput={(e) => adjustHeight(e.currentTarget)}
+                          onFocus={(e) => adjustHeight(e.currentTarget)}
                           onChange={(e) => {
-                            const newRows = [...rows];
+                            const currentVal = Array.isArray(block.content) ? block.content : [['', '']];
+                            const newRows = [...currentVal];
+                            newRows[rIdx] = [...(newRows[rIdx] || [])];
                             newRows[rIdx][cIdx] = e.target.value;
                             handleChange(newRows);
                           }}
                         />
                       </td>
                     ))}
-                    <td className="w-8 p-0 opacity-0 hover:opacity-100 transition-opacity bg-zinc-50">
+                    <td className="w-12 p-0 opacity-0 group-hover/row:opacity-100 transition-all bg-red-50 border-l border-red-100 flex items-center justify-center">
                       <button 
+                        type="button"
                         onClick={() => {
-                          const newRows = rows.map(r => r.filter((_, i) => i !== row.length - 1));
-                          handleChange(newRows);
+                          if (rows.length > 1) {
+                            const newRows = rows.filter((_, i) => i !== rIdx);
+                            handleChange(newRows);
+                          }
                         }}
-                        className="w-full h-full text-red-400 hover:text-red-600"
-                      >×</button>
+                        className="w-full h-full text-red-500 hover:bg-red-100 transition-colors flex items-center justify-center"
+                        title="Elimina riga"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div className="p-2 bg-zinc-50 border-t border-zinc-200 flex gap-4">
+            <div className="p-4 md:p-6 bg-zinc-50 border-t-2 border-zinc-200 flex flex-wrap gap-2 md:gap-4">
               <button 
-                onClick={() => {
-                  const numCols = rows.length > 0 ? rows[0].length : 2;
-                  handleChange([...rows, new Array(numCols).fill('')]);
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const numCols = rows[0]?.length || 2;
+                  const newRow = Array(numCols).fill('');
+                  handleChange([...rows, newRow]);
                 }}
-                className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-indigo-600 transition-colors"
+                className="flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg md:rounded-xl bg-indigo-600 text-[10px] md:text-xs font-black uppercase tracking-widest text-white hover:bg-indigo-700 transition-all shadow-lg active:scale-95"
               >
-                <Plus className="w-3 h-3" />
-                Add Row
+                <Plus className="w-3 h-3 md:w-4 md:h-4" />
+                Riga
               </button>
               <button 
-                onClick={() => {
-                  if (rows.length === 0) {
-                    handleChange([['', '']]);
-                  } else {
-                    handleChange(rows.map(r => [...r, '']));
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const newRows = rows.map(r => [...(Array.isArray(r) ? r : []), '']);
+                  handleChange(newRows);
+                }}
+                className="flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg md:rounded-xl bg-indigo-600 text-[10px] md:text-xs font-black uppercase tracking-widest text-white hover:bg-indigo-700 transition-all shadow-lg active:scale-95"
+              >
+                <Plus className="w-3 h-3 md:w-4 md:h-4" />
+                Colonna
+              </button>
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (rows[0]?.length > 1) {
+                    const newRows = rows.map(r => r.slice(0, -1));
+                    handleChange(newRows);
                   }
                 }}
-                className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-indigo-600 transition-colors"
+                className="flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg md:rounded-xl bg-white border-2 border-red-200 text-[10px] md:text-xs font-black uppercase tracking-widest text-red-500 hover:bg-red-50 transition-all shadow-md active:scale-95 ml-auto"
               >
-                <Plus className="w-3 h-3" />
-                Add Column
+                <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+                Togli
               </button>
             </div>
           </div>
@@ -202,75 +379,91 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
       case 'audio':
       case 'video':
         return (
-          <div className="bg-zinc-900 rounded-3xl p-10 flex flex-col items-center justify-center gap-6 text-white/50 border border-white/10 group shadow-2xl">
+          <div className="bg-zinc-900 rounded-[2.5rem] p-12 flex flex-col items-center justify-center gap-8 text-white/50 border border-white/10 group shadow-2xl">
             <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-all duration-500 shadow-inner">
               {block.type === 'audio' ? <Volume2 className="w-10 h-10" /> : <Video className="w-10 h-10" />}
             </div>
-            <div className="text-center w-full max-w-sm">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 mb-6">{block.type} Media Link</p>
+            <div className="text-center w-full max-w-xl">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 mb-6">{block.type} Media Link</p>
               
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <div className="relative">
                   <input
                     type="text"
-                    className="bg-zinc-800/50 border border-white/5 rounded-2xl px-6 py-4 text-sm text-white w-full text-center focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all placeholder:text-white/10"
-                    placeholder={block.type === 'audio' ? "es. audio/lezione1.mp3 oppure URL" : "es. video/tutorial.mp4 oppure URL"}
+                    className="bg-zinc-800/50 border-2 border-white/5 rounded-2xl px-6 py-4 text-xl text-white w-full text-center focus:outline-none focus:ring-4 focus:ring-indigo-500/30 transition-all placeholder:text-white/10"
+                    placeholder={block.type === 'audio' ? "es. audio/lezione1.mp3" : "es. video/tutorial.mp4"}
                     value={block.content || ''}
                     onChange={(e) => handleChange(e.target.value)}
                   />
                 </div>
-                
-                <p className="text-[10px] text-white/20 font-medium italic">
-                  Puoi inserire un link online o il percorso di un file nella tua cartella.
-                </p>
               </div>
             </div>
           </div>
         );
       case 'citation':
         return (
-          <div className="border-l-2 border-zinc-300 pl-6 py-2 italic font-serif">
-            <textarea
-              className="w-full bg-transparent border-none focus:outline-none focus:ring-0 resize-none text-zinc-600"
-              value={block.content}
-              onChange={(e) => handleChange(e.target.value)}
-              placeholder="Quote or source text..."
-            />
+          <div className="border-l-4 md:border-l-8 border-indigo-100 pl-4 md:pl-10 py-4 md:py-8 italic font-serif">
+            <div className="rich-text-editor">
+              <ReactQuill 
+                theme="snow"
+                value={block.content || ''}
+                onChange={handleChange}
+                modules={{
+                  toolbar: [
+                    [{ 'size': ['14px', '18px', '20px', '24px', '32px', '40px', '48px'] }],
+                    ['bold', 'italic'],
+                    [{ 'color': [] }],
+                    ['clean']
+                  ]
+                }}
+                className="font-serif text-3xl text-slate-600"
+              />
+            </div>
           </div>
         );
       case 'post-it':
         return (
           <div className={cn(
-            "post-it p-6 aspect-square w-64 max-w-full shadow-lg",
-            block.metadata?.color === 'pink' ? "bg-pink-100" :
-            block.metadata?.color === 'blue' ? "bg-sky-100" :
-            "bg-yellow-100"
+            "post-it p-6 md:p-10 aspect-square w-full md:w-80 max-w-[280px] md:max-w-full shadow-2xl transform-gpu rotate-1 mx-auto md:mx-0 relative",
+            block.metadata?.color === 'pink' ? "bg-pink-100 shadow-pink-200/50" :
+            block.metadata?.color === 'blue' ? "bg-sky-100 shadow-sky-200/50" :
+            "bg-yellow-100 shadow-yellow-200/50"
           )}>
-            <textarea
-              className="w-full h-full bg-transparent border-none focus:outline-none focus:ring-0 resize-none font-sans text-sm rotate-1"
-              value={block.content}
-              onChange={(e) => handleChange(e.target.value)}
-              placeholder="Sticky note..."
-            />
+            <div className="rich-text-editor h-full">
+              <ReactQuill 
+                theme="snow"
+                value={block.content || ''}
+                onChange={handleChange}
+                modules={{
+                  toolbar: [
+                    [{ 'size': ['14px', '16px', '18px', '20px', '24px'] }],
+                    ['bold', 'italic', 'underline'],
+                    [{ 'color': [] }],
+                    ['clean']
+                  ]
+                }}
+                className="font-sans transition-all h-full text-xl text-slate-800"
+              />
+            </div>
           </div>
         );
       case 'grammar-breakdown':
-        if (!Array.isArray(block.content)) return <div className="text-red-400">Analisi corrotta</div>;
+        if (!Array.isArray(block.content)) return <div className="text-red-400 text-xs">Analisi corrotta</div>;
         const items = block.content as Array<{ char: string; phonetic: string }>;
         return (
-          <div className="bg-zinc-50 p-6 rounded-xl border border-zinc-100 shadow-sm">
-            <div className="flex items-center gap-2 mb-6">
-              <Languages className="w-5 h-5 text-indigo-500" />
-              <span className="font-semibold text-zinc-700">Grammar Breakdown</span>
+          <div className="bg-slate-50 p-4 md:p-6 rounded-xl md:rounded-2xl border border-slate-200 shadow-sm overflow-x-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 md:gap-3 mb-4">
+              <Languages className="w-3.5 h-3.5 text-indigo-500" />
+              <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Analisi Grammaticale</span>
             </div>
-            <div className="flex flex-wrap gap-4 mb-4">
+            <div className="flex flex-wrap gap-3 md:gap-4 justify-start md:justify-center">
               {items.map((item, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-1 group relative">
+                <div key={idx} className="flex flex-col items-center gap-1.5 md:gap-2 group relative">
                   <input
                     type="text"
-                    className="w-12 text-center text-xs font-mono text-indigo-500 bg-white border border-zinc-200 rounded p-1 mb-1"
+                    className="w-14 md:w-16 text-center text-[9px] md:text-[10px] font-mono text-indigo-600 bg-white border border-zinc-200 rounded px-1 py-0.5 font-bold shadow-sm focus:ring-2 focus:ring-indigo-100 transition-all uppercase"
                     value={item.phonetic}
-                    placeholder="pi"
+                    placeholder="ph"
                     onChange={(e) => {
                       const newContent = [...items];
                       newContent[idx] = { ...item, phonetic: e.target.value };
@@ -279,9 +472,9 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
                   />
                   <input
                     type="text"
-                    className="w-12 text-center text-2xl font-serif bg-white border border-zinc-200 rounded p-1"
+                    className="w-16 md:w-20 text-center text-3xl md:text-4xl font-serif bg-white border border-zinc-200 rounded-lg md:rounded-xl p-1 md:p-2 font-black shadow-md focus:ring-2 focus:ring-indigo-100 transition-all"
                     value={item.char}
-                    placeholder="汉"
+                    placeholder="字"
                     onChange={(e) => {
                       const newContent = [...items];
                       newContent[idx] = { ...item, char: e.target.value };
@@ -289,60 +482,57 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
                     }}
                   />
                   <button 
+                    type="button"
                     onClick={() => {
                       const newContent = items.filter((_, i) => i !== idx);
                       handleChange(newContent);
                     }}
-                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"
                   >
-                    ×
+                    <Trash2 className="w-2.5 h-2.5 md:w-3 md:h-3" />
                   </button>
                 </div>
               ))}
               <button 
+                type="button"
                 onClick={() => handleChange([...items, { char: '', phonetic: '' }])}
-                className="w-12 h-20 border-2 border-dashed border-zinc-300 rounded flex items-center justify-center text-zinc-400 hover:text-indigo-500 hover:border-indigo-300 transition-all bg-white"
+                className="w-16 h-20 md:w-20 md:h-24 border-2 border-dashed border-zinc-200 rounded-lg md:rounded-xl flex items-center justify-center text-zinc-300 hover:text-indigo-500 hover:border-indigo-300 transition-all bg-white hover:bg-slate-50 shadow-sm"
                 title="Aggiungi carattere"
               >
-                <Plus className="w-6 h-6" />
+                <Plus className="w-5 h-5 md:w-6 md:h-6" />
               </button>
             </div>
           </div>
         );
       case 'image':
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {!block.content ? (
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-2">
-                  <input
-                    type="text"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:text-slate-300 shadow-inner"
-                    placeholder="Incolla URL immagine o percorso file (es. img/schema.png)..."
-                    onChange={(e) => handleChange(e.target.value)}
-                  />
-                </div>
-                <p className="text-[10px] text-slate-400 font-medium italic text-center">
-                  L'immagine apparirà qui una volta inserito il percorso o l'URL.
-                </p>
+              <div className="flex flex-col gap-6">
+                <input
+                  type="text"
+                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-xl focus:outline-none focus:ring-8 focus:ring-indigo-500/10 placeholder:text-slate-300 shadow-inner"
+                  placeholder="Incolla URL immagine o percorso file..."
+                  onChange={(e) => handleChange(e.target.value)}
+                />
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="relative group rounded-[2rem] overflow-hidden shadow-2xl border border-slate-100">
                   <img src={block.content} alt="Content" className="w-full h-auto block" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <button 
                       onClick={() => handleChange('')}
-                      className="bg-white text-red-500 p-3 rounded-2xl shadow-xl hover:scale-110 transition-transform font-bold flex items-center gap-2"
+                      className="bg-white text-red-500 px-8 py-3 rounded-xl shadow-xl hover:scale-105 transition-transform font-black uppercase text-xs flex items-center gap-2"
                     >
-                      <Trash2 className="w-5 h-5" />
-                      Rimuovi
+                      <Trash2 className="w-4 h-4" />
+                      Sostituisci
                     </button>
                   </div>
                 </div>
                 <input
                   type="text"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-6 py-3 text-sm text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 text-center"
                   value={(typeof block.content === 'string' && block.content.startsWith('data:')) ? 'File incorporato' : (block.content || '')}
                   onChange={(e) => handleChange(e.target.value)}
                 />
@@ -360,24 +550,38 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
       {/* Connector Dot */}
       <div className="block-connector hidden lg:block" />
 
-      <div className="absolute -left-20 top-0 opacity-0 group-hover:opacity-100 transition-all flex flex-col gap-2 translate-x-4 group-hover:translate-x-0 z-20">
-        <div className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-300 cursor-grab active:cursor-grabbing shadow-lg hover:text-slate-600 transition-colors">
-          <GripVertical className="w-5 h-5" />
+      {/* Connector Side Controls */}
+      <div className={cn(
+        "absolute transition-all flex flex-col gap-2 z-30",
+        "top-0 -left-6 md:-left-12 lg:-left-20",
+        isSelected 
+          ? "opacity-100 translate-x-0" 
+          : "opacity-0 group-hover:opacity-100 translate-x-2 md:translate-x-4 group-hover:translate-x-0"
+      )}>
+        <div className="p-1.5 md:p-2 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-lg text-slate-400 cursor-grab active:cursor-grabbing shadow-lg hover:text-slate-600 transition-colors">
+          <GripVertical className="w-3 h-3 md:w-4 md:h-4" />
         </div>
         <button 
-          onClick={() => removeBlock(block.id)}
-          className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 hover:border-red-100 transition-all shadow-lg"
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            removeBlock(block.id);
+          }}
+          className="p-1.5 md:p-2 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-lg text-red-400 hover:text-red-500 hover:bg-red-50 hover:border-red-100 transition-all shadow-lg"
+          title="Elimina blocco"
         >
-          <Trash2 className="w-5 h-5" />
+          <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
         </button>
       </div>
 
       <div className={cn(
-        "pl-0 lg:pl-4 border-l-2 border-transparent group-hover:border-slate-100 transition-colors",
-        block.type === 'grammar-breakdown' && "p-8 bg-slate-50/50 rounded-3xl border border-slate-100 shadow-inner"
+        "pl-0 md:pl-4 lg:pl-12 border-l-2 border-transparent transition-all",
+        block.type === 'grammar-breakdown' && "p-4 md:p-8 bg-slate-50/30 rounded-2xl md:rounded-[2.5rem] border border-slate-200/50"
       )}>
         {renderEditor()}
       </div>
     </div>
   );
-};
+});
+
+BlockRenderer.displayName = 'BlockRenderer';
