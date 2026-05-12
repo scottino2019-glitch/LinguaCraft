@@ -82,7 +82,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
     switch (block.type) {
       case 'title':
         return (
-          <div className="rich-text-editor group/quill relative">
+          <div className={cn("rich-text-editor group/quill relative", isSelected && "is-selected")}>
             <ReactQuill 
               theme="snow"
               value={localContent || ''}
@@ -102,7 +102,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
         );
       case 'subtitle':
         return (
-          <div className="rich-text-editor group/quill relative">
+          <div className={cn("rich-text-editor group/quill relative", isSelected && "is-selected")}>
             <ReactQuill 
               theme="snow"
               value={localContent || ''}
@@ -122,7 +122,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
         );
       case 'text':
         return (
-          <div className="rich-text-editor group/quill relative">
+          <div className={cn("rich-text-editor group/quill relative", isSelected && "is-selected")}>
             <ReactQuill 
               theme="snow"
               value={localContent || ''}
@@ -144,7 +144,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
         );
       case 'list':
         return (
-          <div className="rich-text-editor group/quill relative">
+          <div className={cn("rich-text-editor group/quill relative", isSelected && "is-selected")}>
             <ReactQuill 
               theme="snow"
               value={localContent || ''}
@@ -194,7 +194,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                 ))}
               </div>
             </div>
-            <div className="rich-text-editor">
+            <div className={cn("rich-text-editor", isSelected && "is-selected")}>
               <ReactQuill 
                 theme="snow"
                 value={localContent || ''}
@@ -246,7 +246,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                         onClick={() => {
                           if (rows.length > 1) {
                             const newRows = rows.filter((_, i) => i !== rIdx);
-                            handleChange(newRows);
+                            debouncedUpdate(newRows);
                           }
                         }}
                         className="w-full h-full text-red-500 hover:bg-red-100 transition-colors flex items-center justify-center"
@@ -329,7 +329,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
       case 'citation':
         return (
           <div className="border-l-4 md:border-l-8 border-indigo-100 pl-4 md:pl-10 py-4 md:py-8 italic font-serif">
-            <div className="rich-text-editor">
+            <div className={cn("rich-text-editor", isSelected && "is-selected")}>
               <ReactQuill 
                 theme="snow"
                 value={localContent || ''}
@@ -353,9 +353,10 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
             "post-it p-6 md:p-10 aspect-square w-full md:w-80 max-w-[280px] md:max-w-full shadow-2xl transform-gpu rotate-1 mx-auto md:mx-0 relative",
             block.metadata?.color === 'pink' ? "bg-pink-100 shadow-pink-200/50" :
             block.metadata?.color === 'blue' ? "bg-sky-100 shadow-sky-200/50" :
-            "bg-yellow-100 shadow-yellow-200/50"
+            "bg-yellow-100 shadow-yellow-200/50",
+            isSelected && "ring-4 ring-indigo-500 z-20 scale-105"
           )}>
-            <div className="rich-text-editor h-full">
+            <div className={cn("rich-text-editor h-full", isSelected && "is-selected")}>
               <ReactQuill 
                 theme="snow"
                 value={localContent || ''}
@@ -377,7 +378,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
         if (!Array.isArray(block.content)) return <div className="text-red-400 text-xs">Analisi corrotta</div>;
         const items = block.content as Array<{ char: string; phonetic: string }>;
         return (
-          <div className="bg-slate-50 p-4 md:p-6 rounded-xl md:rounded-2xl border border-slate-200 shadow-sm overflow-x-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-slate-50 p-4 md:p-6 rounded-xl md:rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
             <div className="flex items-center gap-2 md:gap-3 mb-4">
               <Languages className="w-3.5 h-3.5 text-indigo-500" />
               <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Analisi Grammaticale</span>
@@ -479,10 +480,10 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
       {/* Connector Side Controls */}
       <div className={cn(
         "absolute transition-all flex flex-col gap-2 z-30",
-        "-left-8 md:-left-12 lg:-left-20 top-0",
+        "-top-4 right-0 md:top-0 md:right-auto md:-left-12 lg:-left-20",
         isSelected 
-          ? "opacity-100 translate-x-0" 
-          : "opacity-0 group-hover:opacity-100 translate-x-1 md:translate-x-2"
+          ? "opacity-100 translate-y-0" 
+          : "opacity-0 group-hover:opacity-100 translate-y-1 md:translate-y-0 md:translate-x-1"
       )}>
         <div className="p-2 bg-white border-2 border-slate-200 rounded-xl text-slate-400 cursor-grab active:cursor-grabbing shadow-xl hover:text-indigo-600 hover:border-indigo-100 transition-all">
           <GripVertical className="w-4 h-4 md:w-5 md:h-5" />
