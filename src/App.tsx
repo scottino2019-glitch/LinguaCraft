@@ -117,7 +117,8 @@ export default function App() {
 
   const stripHtml = (html: string) => {
     if (!html) return "";
-    return html.replace(/<[^>]*>?/gm, '');
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || doc.body.innerText || "";
   };
 
   return (
@@ -162,7 +163,7 @@ export default function App() {
             initial={{ x: -280 }}
             animate={{ x: 0 }}
             exit={{ x: -280 }}
-            className="w-72 bg-white border-r border-slate-200 px-6 py-20 flex flex-shrink-0 flex-col gap-8 shadow-sm z-40"
+            className="w-72 bg-white border-r border-slate-200 px-6 py-20 flex flex-shrink-0 flex-col gap-8 shadow-2xl z-50 fixed md:relative h-full"
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl italic shadow-indigo-100 shadow-xl">L</div>
@@ -233,6 +234,7 @@ export default function App() {
                     updateBlock={updateBlock}
                     removeBlock={removeBlock}
                     isSelected={selectedBlockId === block.id}
+                    onSelect={() => setSelectedBlockId(block.id)}
                   />
                 </div>
               
@@ -303,7 +305,7 @@ export default function App() {
             initial={{ x: 280 }}
             animate={{ x: 0 }}
             exit={{ x: 280 }}
-            className="z-40"
+            className="z-50 fixed right-0 top-0 bottom-0 md:relative h-full shadow-2xl md:shadow-none"
           >
             <Toolbar 
               onAddBlock={(type, meta) => addBlock(type, undefined, meta)} 

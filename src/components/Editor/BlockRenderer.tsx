@@ -34,31 +34,38 @@ interface BlockRendererProps {
   updateBlock: (id: string, updates: Partial<Block>) => void;
   removeBlock: (id: string) => void;
   isSelected?: boolean;
+  onSelect?: () => void;
 }
 
 export const BlockRenderer = React.memo<BlockRendererProps>(({ 
   block, 
   updateBlock, 
   removeBlock,
-  isSelected
+  isSelected,
+  onSelect
 }) => {
   // Use local state for immediate feedback, then sync with parent
   const [localContent, setLocalContent] = React.useState(block.content);
   const timeoutRef = React.useRef<NodeJS.Timeout>(null);
+  const isEditingRef = React.useRef(false);
 
-  // Update local state when block content changes from outside (e.g. undo/redo or initial load)
+  // Update local state when block content changes from outside (e.g. undo/redo)
+  // But ONLY if we are not actively editing to prevent cursor jumps
   React.useEffect(() => {
-    if (block.content !== localContent) {
+    if (!isEditingRef.current) {
       setLocalContent(block.content);
     }
   }, [block.content]);
 
   const debouncedUpdate = (newContent: any) => {
     setLocalContent(newContent);
+    isEditingRef.current = true;
+    
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       updateBlock(block.id, { content: newContent });
-    }, 500); // 500ms debounce
+      isEditingRef.current = false;
+    }, 500); 
   };
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -87,6 +94,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
               theme="snow"
               value={localContent || ''}
               onChange={debouncedUpdate}
+              onFocus={onSelect}
               placeholder="Titolo della Lezione..."
               modules={{
                 toolbar: [
@@ -107,6 +115,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
               theme="snow"
               value={localContent || ''}
               onChange={debouncedUpdate}
+              onFocus={onSelect}
               placeholder="Sottotitolo..."
               modules={{
                 toolbar: [
@@ -127,6 +136,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
               theme="snow"
               value={localContent || ''}
               onChange={debouncedUpdate}
+              onFocus={onSelect}
               placeholder="Inizia a scrivere la lezione..."
               modules={{
                 toolbar: [
@@ -149,6 +159,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
               theme="snow"
               value={localContent || ''}
               onChange={debouncedUpdate}
+              onFocus={onSelect}
               placeholder="Inserisci elementi della lista..."
               modules={{
                 toolbar: [
@@ -199,6 +210,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                 theme="snow"
                 value={localContent || ''}
                 onChange={debouncedUpdate}
+                onFocus={onSelect}
                 modules={{
                   toolbar: [
                     [{ 'size': ['14px', '16px', '18px', '20px', '24px', '32px', '40px', '48px'] }],
@@ -230,7 +242,10 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                           rows={1}
                           placeholder="..."
                           onInput={(e) => adjustHeight(e.currentTarget)}
-                          onFocus={(e) => adjustHeight(e.currentTarget)}
+                          onFocus={(e) => {
+                            adjustHeight(e.currentTarget);
+                            onSelect?.();
+                          }}
                           onChange={(e) => {
                             const newRows = [...rows];
                             newRows[rIdx] = [...(newRows[rIdx] || [])];
@@ -243,8 +258,9 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                     <td className="w-12 p-0 opacity-0 group-hover/row:opacity-100 transition-all bg-red-50 border-l border-red-100 flex items-center justify-center">
                       <button 
                         type="button"
-                        onClick={() => {
-                          if (rows.length > 1) {
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (rows.length > 1 && confirm('Eliminare questa riga?')) {
                             const newRows = rows.filter((_, i) => i !== rIdx);
                             debouncedUpdate(newRows);
                           }
@@ -263,7 +279,8 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
               <button 
                 type="button"
                 onClick={(e) => {
-                  e.preventDefault();
+                  e.stopPropagation();
+                  onSelect?.();
                   const numCols = rows[0]?.length || 2;
                   const newRow = Array(numCols).fill('');
                   debouncedUpdate([...rows, newRow]);
@@ -276,7 +293,8 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
               <button 
                 type="button"
                 onClick={(e) => {
-                  e.preventDefault();
+                  e.stopPropagation();
+                  onSelect?.();
                   const newRows = rows.map(r => [...(Array.isArray(r) ? r : []), '']);
                   debouncedUpdate(newRows);
                 }}
@@ -288,8 +306,9 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
               <button 
                 type="button"
                 onClick={(e) => {
-                  e.preventDefault();
-                  if (rows[0]?.length > 1) {
+                  e.stopPropagation();
+                  onSelect?.();
+                  if (rows[0]?.length > 1 && confirm('Rimuovere l\'ultima colonna?')) {
                     const newRows = rows.map(r => r.slice(0, -1));
                     debouncedUpdate(newRows);
                   }
@@ -305,7 +324,10 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
       case 'audio':
       case 'video':
         return (
-          <div className="bg-zinc-900 rounded-[2.5rem] p-12 flex flex-col items-center justify-center gap-8 text-white/50 border border-white/10 group shadow-2xl">
+          <div 
+            className="bg-zinc-900 rounded-[2.5rem] p-12 flex flex-col items-center justify-center gap-8 text-white/50 border border-white/10 group shadow-2xl"
+            onClick={onSelect}
+          >
             <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-all duration-500 shadow-inner">
               {block.type === 'audio' ? <Volume2 className="w-10 h-10" /> : <Video className="w-10 h-10" />}
             </div>
@@ -319,6 +341,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                     className="bg-zinc-800/50 border-2 border-white/5 rounded-2xl px-6 py-4 text-xl text-white w-full text-center focus:outline-none focus:ring-4 focus:ring-indigo-500/30 transition-all placeholder:text-white/10"
                     placeholder={block.type === 'audio' ? "es. audio/lezione1.mp3" : "es. video/tutorial.mp4"}
                     value={localContent || ''}
+                    onFocus={onSelect}
                     onChange={(e) => debouncedUpdate(e.target.value)}
                   />
                 </div>
@@ -334,6 +357,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                 theme="snow"
                 value={localContent || ''}
                 onChange={debouncedUpdate}
+                onFocus={onSelect}
                 modules={{
                   toolbar: [
                     [{ 'size': ['14px', '18px', '20px', '24px', '32px', '40px', '48px'] }],
@@ -350,17 +374,18 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
       case 'post-it':
         return (
           <div className={cn(
-            "post-it p-6 md:p-10 aspect-square w-full md:w-80 max-w-[280px] md:max-w-full shadow-2xl transform-gpu rotate-1 mx-auto md:mx-0 relative",
+            "post-it p-6 md:p-10 aspect-square w-full md:w-80 max-w-[280px] md:max-w-full shadow-2xl relative bg-yellow-100",
             block.metadata?.color === 'pink' ? "bg-pink-100 shadow-pink-200/50" :
             block.metadata?.color === 'blue' ? "bg-sky-100 shadow-sky-200/50" :
-            "bg-yellow-100 shadow-yellow-200/50",
-            isSelected && "ring-4 ring-indigo-500 z-20 scale-105"
+            "shadow-yellow-200/50",
+            isSelected && "ring-4 ring-indigo-500 z-20"
           )}>
             <div className={cn("rich-text-editor h-full", isSelected && "is-selected")}>
               <ReactQuill 
                 theme="snow"
                 value={localContent || ''}
                 onChange={debouncedUpdate}
+                onFocus={onSelect}
                 modules={{
                   toolbar: [
                     [{ 'size': ['14px', '16px', '18px', '20px', '24px'] }],
@@ -391,6 +416,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                     className="w-14 md:w-16 text-center text-[9px] md:text-[10px] font-mono text-indigo-600 bg-white border border-zinc-200 rounded px-1 py-0.5 font-bold shadow-sm focus:ring-2 focus:ring-indigo-100 transition-all uppercase"
                     value={item.phonetic}
                     placeholder="ph"
+                    onFocus={onSelect}
                     onChange={(e) => {
                       const newContent = [...items];
                       newContent[idx] = { ...item, phonetic: e.target.value };
@@ -402,6 +428,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                     className="w-16 md:w-20 text-center text-3xl md:text-4xl font-serif bg-white border border-zinc-200 rounded-lg md:rounded-xl p-1 md:p-2 font-black shadow-md focus:ring-2 focus:ring-indigo-100 transition-all"
                     value={item.char}
                     placeholder="字"
+                    onFocus={onSelect}
                     onChange={(e) => {
                       const newContent = [...items];
                       newContent[idx] = { ...item, char: e.target.value };
@@ -473,31 +500,36 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
   };
 
   return (
-    <div className="group relative mb-12 animate-in fade-in slide-in-from-top-4 duration-500">
+    <div 
+      className="group relative mb-12 animate-in fade-in slide-in-from-top-4 duration-500"
+      onMouseDown={() => onSelect?.()}
+    >
       {/* Connector Dot */}
       <div className="block-connector hidden lg:block" />
 
       {/* Connector Side Controls */}
       <div className={cn(
-        "absolute transition-all flex flex-col gap-2 z-30",
-        "-top-4 right-0 md:top-0 md:right-auto md:-left-12 lg:-left-20",
+        "absolute transition-all flex flex-col gap-2 z-[100]",
+        "-top-14 right-2 md:top-0 md:right-auto md:-left-16 lg:-left-20",
         isSelected 
-          ? "opacity-100 translate-y-0" 
-          : "opacity-0 group-hover:opacity-100 translate-y-1 md:translate-y-0 md:translate-x-1"
+          ? "opacity-100 scale-100" 
+          : "opacity-0 group-hover:opacity-100 scale-90 md:translate-x-1"
       )}>
-        <div className="p-2 bg-white border-2 border-slate-200 rounded-xl text-slate-400 cursor-grab active:cursor-grabbing shadow-xl hover:text-indigo-600 hover:border-indigo-100 transition-all">
-          <GripVertical className="w-4 h-4 md:w-5 md:h-5" />
+        <div className="p-3 bg-white border-2 border-indigo-100 rounded-2xl text-slate-400 cursor-grab active:cursor-grabbing shadow-2xl hover:text-indigo-600 hover:border-indigo-500 transition-all">
+          <GripVertical className="w-5 h-5 md:w-6 md:h-6" />
         </div>
         <button 
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            removeBlock(block.id);
+            if (confirm('Sei sicuro di voler eliminare questo blocco?')) {
+              removeBlock(block.id);
+            }
           }}
-          className="p-2 bg-white border-2 border-red-100 rounded-xl text-red-500 hover:bg-red-50 hover:border-red-400 transition-all shadow-xl active:scale-95"
+          className="p-3 bg-white border-2 border-red-100 rounded-2xl text-red-500 hover:bg-red-50 hover:border-red-500 transition-all shadow-2xl active:scale-95"
           title="Elimina blocco"
         >
-          <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+          <Trash2 className="w-5 h-5 md:w-6 md:h-6" />
         </button>
       </div>
 
