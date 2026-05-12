@@ -4,11 +4,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Book, Block, BlockType } from './types.ts';
-import { Toolbar } from './components/Editor/Toolbar.tsx';
-import { BlockRenderer } from './components/Editor/BlockRenderer.tsx';
-import { generateId, cn } from './lib/utils.ts';
-import { exportBookToHTML } from './lib/exporter.ts';
+import { Book, Block, BlockType } from './types';
+import { Toolbar } from './components/editor/toolbar';
+import { BlockRenderer } from './components/editor/block-renderer';
+import { generateId, cn } from './lib/utils';
+import { exportBookToHTML } from './lib/exporter';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, ChevronRight, BookOpen, AlertCircle, Plus, Download, Quote, Volume2 } from 'lucide-react';
 
@@ -32,8 +32,18 @@ export default function App() {
   });
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(window.innerWidth > 768);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(window.innerWidth > 768);
+
+  const toggleLeftSidebar = () => {
+    if (window.innerWidth <= 768) setIsRightSidebarOpen(false);
+    setIsLeftSidebarOpen(!isLeftSidebarOpen);
+  };
+
+  const toggleRightSidebar = () => {
+    if (window.innerWidth <= 768) setIsLeftSidebarOpen(false);
+    setIsRightSidebarOpen(!isRightSidebarOpen);
+  };
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
   // Persistence
@@ -139,9 +149,9 @@ export default function App() {
       {/* Top Main Actions Bar */}
       <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 bg-white/90 backdrop-blur-xl border border-slate-200 px-4 py-2 rounded-full shadow-2xl scale-90 md:scale-100">
         <button 
-          onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
+          onClick={toggleLeftSidebar}
           className={cn("p-2 rounded-full transition-colors", isLeftSidebarOpen ? "bg-indigo-50 text-indigo-600" : "text-slate-400 hover:bg-slate-50")}
-          title="Toggle Index"
+          title="Indice Lezioni"
         >
           <Search className="w-4 h-4" />
         </button>
@@ -162,9 +172,9 @@ export default function App() {
         </button>
         <div className="w-px h-4 bg-slate-200 mx-1" />
         <button 
-          onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+          onClick={toggleRightSidebar}
           className={cn("p-2 rounded-full transition-colors", isRightSidebarOpen ? "bg-indigo-50 text-indigo-600" : "text-slate-400 hover:bg-slate-50")}
-          title="Toggle Toolbar"
+          title="Aggiungi Blocco"
         >
           <Plus className="w-4 h-4" />
         </button>

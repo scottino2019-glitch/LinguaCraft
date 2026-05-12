@@ -15,8 +15,8 @@ import {
   Languages,
   Settings2
 } from 'lucide-react';
-import { Block, BlockType } from '../../types.ts';
-import { cn } from '../../lib/utils.ts';
+import { Block, BlockType } from '../../types';
+import { cn } from '../../lib/utils';
 import { motion, Reorder, AnimatePresence } from 'motion/react';
 
 import ReactQuill, { Quill } from 'react-quill-new';
