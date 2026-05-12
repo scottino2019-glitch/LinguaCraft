@@ -90,19 +90,19 @@ export default function App() {
     }, 100);
   };
 
-  const updateBlock = (id: string, updates: Partial<Block>) => {
+  const updateBlock = React.useCallback((id: string, updates: Partial<Block>) => {
     setBook(prev => ({
       ...prev,
       blocks: prev.blocks.map(b => b.id === id ? { ...b, ...updates } : b)
     }));
-  };
+  }, []);
 
-  const removeBlock = (id: string) => {
+  const removeBlock = React.useCallback((id: string) => {
     setBook(prev => ({
       ...prev,
       blocks: prev.blocks.filter(b => b.id !== id)
     }));
-  };
+  }, []);
 
   const handleExport = () => {
     const html = exportBookToHTML(book);
@@ -117,8 +117,7 @@ export default function App() {
 
   const stripHtml = (html: string) => {
     if (!html) return "";
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    return doc.body.textContent || doc.body.innerText || "";
+    return html.replace(/<[^>]*>?/gm, '');
   };
 
   return (
@@ -222,8 +221,10 @@ export default function App() {
             <div key={block.id} className="relative group/block">
                 <div id={`block-${block.id}`} 
                     className={cn(
-                      "scroll-mt-32 rounded-[2rem] transition-all relative",
-                      selectedBlockId === block.id ? "ring-4 ring-indigo-500/10 bg-slate-50/50" : "hover:bg-slate-50/30"
+                      "scroll-mt-32 rounded-[2.5rem] transition-all relative",
+                      selectedBlockId === block.id 
+                        ? "ring-4 ring-indigo-500 shadow-2xl bg-white z-10" 
+                        : "hover:bg-white/50 border border-transparent hover:border-slate-200"
                     )}
                     onClick={() => setSelectedBlockId(block.id)}
                 >

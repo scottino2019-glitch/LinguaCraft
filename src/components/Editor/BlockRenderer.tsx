@@ -20,7 +20,6 @@ import { cn } from '../../lib/utils';
 import { motion, Reorder, AnimatePresence } from 'motion/react';
 
 import ReactQuill, { Quill } from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
 
 // Configure Quill to use inline styles for colors and fonts
 const Size = Quill.import('attributors/style/size') as any;
@@ -43,8 +42,23 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
   removeBlock,
   isSelected
 }) => {
-  const handleChange = (content: any) => {
-    updateBlock(block.id, { content });
+  // Use local state for immediate feedback, then sync with parent
+  const [localContent, setLocalContent] = React.useState(block.content);
+  const timeoutRef = React.useRef<NodeJS.Timeout>(null);
+
+  // Update local state when block content changes from outside (e.g. undo/redo or initial load)
+  React.useEffect(() => {
+    if (block.content !== localContent) {
+      setLocalContent(block.content);
+    }
+  }, [block.content]);
+
+  const debouncedUpdate = (newContent: any) => {
+    setLocalContent(newContent);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      updateBlock(block.id, { content: newContent });
+    }, 500); // 500ms debounce
   };
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -71,8 +85,8 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
           <div className="rich-text-editor group/quill relative">
             <ReactQuill 
               theme="snow"
-              value={block.content || ''}
-              onChange={handleChange}
+              value={localContent || ''}
+              onChange={debouncedUpdate}
               placeholder="Titolo della Lezione..."
               modules={{
                 toolbar: [
@@ -91,8 +105,8 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
           <div className="rich-text-editor group/quill relative">
             <ReactQuill 
               theme="snow"
-              value={block.content || ''}
-              onChange={handleChange}
+              value={localContent || ''}
+              onChange={debouncedUpdate}
               placeholder="Sottotitolo..."
               modules={{
                 toolbar: [
@@ -111,8 +125,8 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
           <div className="rich-text-editor group/quill relative">
             <ReactQuill 
               theme="snow"
-              value={block.content || ''}
-              onChange={handleChange}
+              value={localContent || ''}
+              onChange={debouncedUpdate}
               placeholder="Inizia a scrivere la lezione..."
               modules={{
                 toolbar: [
@@ -126,93 +140,6 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
               }}
               className="font-serif text-lg md:text-xl text-slate-800"
             />
-            <style>{`
-              .rich-text-editor .ql-container {
-                border: none !important;
-                font-family: inherit;
-              }
-              .rich-text-editor .ql-editor {
-                padding: 10px 0;
-                min-height: 40px;
-                line-height: 1.6;
-                font-size: 1.125rem;
-              }
-              @media (min-width: 768px) {
-                .rich-text-editor .ql-editor {
-                  padding: 12px 0;
-                  font-size: 1.25rem;
-                }
-              }
-              .rich-text-editor .ql-toolbar {
-                border: 1px solid #e2e8f0 !important;
-                padding: 4px !important;
-                background: white;
-                border-radius: 8px;
-                margin-bottom: 8px;
-                position: absolute;
-                top: -42px;
-                left: 0;
-                z-index: 50;
-                opacity: 0;
-                visibility: hidden;
-                transition: all 0.2s ease;
-                box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-              }
-              .rich-text-editor:hover .ql-toolbar,
-              .rich-text-editor:focus-within .ql-toolbar {
-                opacity: 1;
-                visibility: visible;
-                top: -48px;
-              }
-              /* Fix picker labels showing "Normal" */
-              .ql-snow .ql-picker.ql-size .ql-picker-label::before,
-              .ql-snow .ql-picker.ql-size .ql-picker-item::before {
-                content: attr(data-value) !important;
-              }
-              .ql-snow .ql-picker.ql-size .ql-picker-label {
-                padding-right: 18px !important;
-                width: auto !important;
-                min-width: 60px;
-              }
-              .rich-text-editor .ql-editor.ql-blank::before {
-                left: 0;
-                font-style: italic;
-                opacity: 0.3;
-                font-size: 0.9em;
-              }
-              .ql-editor p {
-                font-size: inherit;
-              }
-              .ql-toolbar button {
-                width: 28px !important;
-                height: 28px !important;
-                padding: 4px !important;
-              }
-              .ql-toolbar .ql-picker {
-                height: 28px !important;
-                line-height: 28px !important;
-              }
-              .ql-toolbar .ql-picker-label {
-                padding-left: 4px !important;
-                padding-right: 4px !important;
-              }
-              .rich-text-editor.table-cell-editor .ql-editor {
-                padding: 12px;
-                min-height: 48px;
-                font-size: 1.125rem;
-              }
-              .rich-text-editor.table-cell-editor .ql-toolbar {
-                top: -36px;
-                left: 0;
-                transform: scale(0.65);
-                transform-origin: left bottom;
-                z-index: 60;
-                min-width: 120px;
-              }
-              .rich-text-editor.table-cell-editor .ql-container {
-                min-width: 0;
-              }
-            `}</style>
           </div>
         );
       case 'list':
@@ -220,8 +147,8 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
           <div className="rich-text-editor group/quill relative">
             <ReactQuill 
               theme="snow"
-              value={block.content || ''}
-              onChange={handleChange}
+              value={localContent || ''}
+              onChange={debouncedUpdate}
               placeholder="Inserisci elementi della lista..."
               modules={{
                 toolbar: [
@@ -270,8 +197,8 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
             <div className="rich-text-editor">
               <ReactQuill 
                 theme="snow"
-                value={block.content || ''}
-                onChange={handleChange}
+                value={localContent || ''}
+                onChange={debouncedUpdate}
                 modules={{
                   toolbar: [
                     [{ 'size': ['14px', '16px', '18px', '20px', '24px', '32px', '40px', '48px'] }],
@@ -286,7 +213,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
           </div>
         );
       case 'table':
-        const tableData = Array.isArray(block.content) ? block.content : [['', '']];
+        const tableData = Array.isArray(localContent) ? localContent : [['', '']];
         const rows = tableData as string[][];
 
         return (
@@ -305,11 +232,10 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                           onInput={(e) => adjustHeight(e.currentTarget)}
                           onFocus={(e) => adjustHeight(e.currentTarget)}
                           onChange={(e) => {
-                            const currentVal = Array.isArray(block.content) ? block.content : [['', '']];
-                            const newRows = [...currentVal];
+                            const newRows = [...rows];
                             newRows[rIdx] = [...(newRows[rIdx] || [])];
                             newRows[rIdx][cIdx] = e.target.value;
-                            handleChange(newRows);
+                            debouncedUpdate(newRows);
                           }}
                         />
                       </td>
@@ -340,7 +266,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                   e.preventDefault();
                   const numCols = rows[0]?.length || 2;
                   const newRow = Array(numCols).fill('');
-                  handleChange([...rows, newRow]);
+                  debouncedUpdate([...rows, newRow]);
                 }}
                 className="flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg md:rounded-xl bg-indigo-600 text-[10px] md:text-xs font-black uppercase tracking-widest text-white hover:bg-indigo-700 transition-all shadow-lg active:scale-95"
               >
@@ -352,7 +278,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                 onClick={(e) => {
                   e.preventDefault();
                   const newRows = rows.map(r => [...(Array.isArray(r) ? r : []), '']);
-                  handleChange(newRows);
+                  debouncedUpdate(newRows);
                 }}
                 className="flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg md:rounded-xl bg-indigo-600 text-[10px] md:text-xs font-black uppercase tracking-widest text-white hover:bg-indigo-700 transition-all shadow-lg active:scale-95"
               >
@@ -365,7 +291,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                   e.preventDefault();
                   if (rows[0]?.length > 1) {
                     const newRows = rows.map(r => r.slice(0, -1));
-                    handleChange(newRows);
+                    debouncedUpdate(newRows);
                   }
                 }}
                 className="flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg md:rounded-xl bg-white border-2 border-red-200 text-[10px] md:text-xs font-black uppercase tracking-widest text-red-500 hover:bg-red-50 transition-all shadow-md active:scale-95 ml-auto"
@@ -392,8 +318,8 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                     type="text"
                     className="bg-zinc-800/50 border-2 border-white/5 rounded-2xl px-6 py-4 text-xl text-white w-full text-center focus:outline-none focus:ring-4 focus:ring-indigo-500/30 transition-all placeholder:text-white/10"
                     placeholder={block.type === 'audio' ? "es. audio/lezione1.mp3" : "es. video/tutorial.mp4"}
-                    value={block.content || ''}
-                    onChange={(e) => handleChange(e.target.value)}
+                    value={localContent || ''}
+                    onChange={(e) => debouncedUpdate(e.target.value)}
                   />
                 </div>
               </div>
@@ -406,8 +332,8 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
             <div className="rich-text-editor">
               <ReactQuill 
                 theme="snow"
-                value={block.content || ''}
-                onChange={handleChange}
+                value={localContent || ''}
+                onChange={debouncedUpdate}
                 modules={{
                   toolbar: [
                     [{ 'size': ['14px', '18px', '20px', '24px', '32px', '40px', '48px'] }],
@@ -432,8 +358,8 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
             <div className="rich-text-editor h-full">
               <ReactQuill 
                 theme="snow"
-                value={block.content || ''}
-                onChange={handleChange}
+                value={localContent || ''}
+                onChange={debouncedUpdate}
                 modules={{
                   toolbar: [
                     [{ 'size': ['14px', '16px', '18px', '20px', '24px'] }],
@@ -467,7 +393,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                     onChange={(e) => {
                       const newContent = [...items];
                       newContent[idx] = { ...item, phonetic: e.target.value };
-                      handleChange(newContent);
+                      debouncedUpdate(newContent);
                     }}
                   />
                   <input
@@ -478,14 +404,14 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                     onChange={(e) => {
                       const newContent = [...items];
                       newContent[idx] = { ...item, char: e.target.value };
-                      handleChange(newContent);
+                      debouncedUpdate(newContent);
                     }}
                   />
                   <button 
                     type="button"
                     onClick={() => {
                       const newContent = items.filter((_, i) => i !== idx);
-                      handleChange(newContent);
+                      debouncedUpdate(newContent);
                     }}
                     className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"
                   >
@@ -495,7 +421,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
               ))}
               <button 
                 type="button"
-                onClick={() => handleChange([...items, { char: '', phonetic: '' }])}
+                onClick={() => debouncedUpdate([...items, { char: '', phonetic: '' }])}
                 className="w-16 h-20 md:w-20 md:h-24 border-2 border-dashed border-zinc-200 rounded-lg md:rounded-xl flex items-center justify-center text-zinc-300 hover:text-indigo-500 hover:border-indigo-300 transition-all bg-white hover:bg-slate-50 shadow-sm"
                 title="Aggiungi carattere"
               >
@@ -507,22 +433,22 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
       case 'image':
         return (
           <div className="space-y-6">
-            {!block.content ? (
+            {!localContent ? (
               <div className="flex flex-col gap-6">
                 <input
                   type="text"
                   className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-xl focus:outline-none focus:ring-8 focus:ring-indigo-500/10 placeholder:text-slate-300 shadow-inner"
                   placeholder="Incolla URL immagine o percorso file..."
-                  onChange={(e) => handleChange(e.target.value)}
+                  onChange={(e) => debouncedUpdate(e.target.value)}
                 />
               </div>
             ) : (
               <div className="space-y-6">
                 <div className="relative group rounded-[2rem] overflow-hidden shadow-2xl border border-slate-100">
-                  <img src={block.content} alt="Content" className="w-full h-auto block" />
+                  <img src={localContent as string} alt="Content" className="w-full h-auto block" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <button 
-                      onClick={() => handleChange('')}
+                      onClick={() => debouncedUpdate('')}
                       className="bg-white text-red-500 px-8 py-3 rounded-xl shadow-xl hover:scale-105 transition-transform font-black uppercase text-xs flex items-center gap-2"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -533,8 +459,8 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
                 <input
                   type="text"
                   className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-6 py-3 text-sm text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 text-center"
-                  value={(typeof block.content === 'string' && block.content.startsWith('data:')) ? 'File incorporato' : (block.content || '')}
-                  onChange={(e) => handleChange(e.target.value)}
+                  value={(typeof localContent === 'string' && localContent.startsWith('data:')) ? 'File incorporato' : (localContent as string || '')}
+                  onChange={(e) => debouncedUpdate(e.target.value)}
                 />
               </div>
             )}
@@ -553,13 +479,13 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
       {/* Connector Side Controls */}
       <div className={cn(
         "absolute transition-all flex flex-col gap-2 z-30",
-        "top-0 -left-6 md:-left-12 lg:-left-20",
+        "-left-8 md:-left-12 lg:-left-20 top-0",
         isSelected 
           ? "opacity-100 translate-x-0" 
-          : "opacity-0 group-hover:opacity-100 translate-x-2 md:translate-x-4 group-hover:translate-x-0"
+          : "opacity-0 group-hover:opacity-100 translate-x-1 md:translate-x-2"
       )}>
-        <div className="p-1.5 md:p-2 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-lg text-slate-400 cursor-grab active:cursor-grabbing shadow-lg hover:text-slate-600 transition-colors">
-          <GripVertical className="w-3 h-3 md:w-4 md:h-4" />
+        <div className="p-2 bg-white border-2 border-slate-200 rounded-xl text-slate-400 cursor-grab active:cursor-grabbing shadow-xl hover:text-indigo-600 hover:border-indigo-100 transition-all">
+          <GripVertical className="w-4 h-4 md:w-5 md:h-5" />
         </div>
         <button 
           type="button"
@@ -567,10 +493,10 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
             e.stopPropagation();
             removeBlock(block.id);
           }}
-          className="p-1.5 md:p-2 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-lg text-red-400 hover:text-red-500 hover:bg-red-50 hover:border-red-100 transition-all shadow-lg"
+          className="p-2 bg-white border-2 border-red-100 rounded-xl text-red-500 hover:bg-red-50 hover:border-red-400 transition-all shadow-xl active:scale-95"
           title="Elimina blocco"
         >
-          <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+          <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
         </button>
       </div>
 

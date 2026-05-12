@@ -1,10 +1,112 @@
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;800&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "react-quill-new/dist/quill.snow.css";
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Crimson Pro", serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Quill Editor Styles */
+.rich-text-editor .ql-container {
+  border: none !important;
+  font-family: inherit;
+}
+
+.rich-text-editor .ql-editor {
+  padding: 10px 0;
+  min-height: 40px;
+  line-height: 1.6;
+  font-size: 1.125rem;
+}
+
+@media (min-width: 768px) {
+  .rich-text-editor .ql-editor {
+    padding: 12px 0;
+    font-size: 1.25rem;
+  }
+}
+
+.rich-text-editor .ql-toolbar {
+  border: 1px solid #e2e8f0 !important;
+  padding: 4px !important;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  position: absolute;
+  top: -42px;
+  left: 0;
+  z-index: 50;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+.rich-text-editor:hover .ql-toolbar,
+.rich-text-editor:focus-within .ql-toolbar {
+  opacity: 1;
+  visibility: visible;
+  top: -48px;
+}
+
+/* Fix picker labels showing "Normal" */
+.ql-snow .ql-picker.ql-size .ql-picker-label::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item::before {
+  content: attr(data-value) !important;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label {
+  padding-right: 18px !important;
+  width: auto !important;
+  min-width: 60px;
+}
+
+.rich-text-editor .ql-editor.ql-blank::before {
+  left: 0;
+  font-style: italic;
+  opacity: 0.3;
+  font-size: 0.9em;
+}
+
+.ql-editor p {
+  font-size: inherit;
+}
+
+.ql-toolbar button {
+  width: 28px !important;
+  height: 28px !important;
+  padding: 4px !important;
+}
+
+.ql-toolbar .ql-picker {
+  height: 28px !important;
+  line-height: 28px !important;
+}
+
+.ql-toolbar .ql-picker-label {
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
+
+.rich-text-editor.table-cell-editor .ql-editor {
+  padding: 12px;
+  min-height: 48px;
+  font-size: 1.125rem;
+}
+
+.rich-text-editor.table-cell-editor .ql-toolbar {
+  top: -36px;
+  left: 0;
+  transform: scale(0.65);
+  transform-origin: left bottom;
+  z-index: 60;
+  min-width: 120px;
+}
+
+.rich-text-editor.table-cell-editor .ql-container {
+  min-width: 0;
 }
 
 @layer base {
