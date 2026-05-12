@@ -1,6 +1,6 @@
 import React from 'react';
-import { Block, BlockType } from '../../types';
-import { cn } from '../../lib/utils';
+import { Block, BlockType } from '../../types.ts';
+import { cn } from '../../lib/utils.ts';
 
 interface ToolbarProps {
   onAddBlock: (type: BlockType, metadata?: any) => void;

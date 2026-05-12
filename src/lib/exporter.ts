@@ -1,4 +1,4 @@
-import { Book, Block } from '../types';
+import { Book, Block } from '../types.ts';
 
 export function exportBookToHTML(book: Book): string {
   const renderBlock = (block: Block) => {

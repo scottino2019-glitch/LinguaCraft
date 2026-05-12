@@ -4,11 +4,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Book, Block, BlockType } from './types';
-import { Toolbar } from './components/Editor/Toolbar';
-import { BlockRenderer } from './components/Editor/BlockRenderer';
-import { generateId, cn } from './lib/utils';
-import { exportBookToHTML } from './lib/exporter';
+import { Book, Block, BlockType } from './types.ts';
+import { Toolbar } from './components/Editor/Toolbar.tsx';
+import { BlockRenderer } from './components/Editor/BlockRenderer.tsx';
+import { generateId, cn } from './lib/utils.ts';
+import { exportBookToHTML } from './lib/exporter.ts';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, ChevronRight, BookOpen, AlertCircle, Plus, Download, Quote, Volume2 } from 'lucide-react';
 
