@@ -38,10 +38,16 @@
   top: 0 !important;
   left: 0 !important;
   z-index: 50;
-  display: none;
+  display: none !important;
   opacity: 1 !important;
   visibility: visible !important;
-  transition: all 0.2s ease;
+}
+
+@media (max-width: 768px) {
+  .rich-text-editor .ql-toolbar {
+    border-radius: 8px !important;
+    margin: 4px 0 !important;
+  }
 }
 
 .rich-text-editor:hover .ql-toolbar,

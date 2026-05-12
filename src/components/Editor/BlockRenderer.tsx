@@ -501,8 +501,9 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
 
   return (
     <div 
-      className="group relative mb-12 animate-in fade-in slide-in-from-top-4 duration-500"
+      className="group relative mb-8 md:mb-12 animate-in fade-in slide-in-from-top-4 duration-500"
       onMouseDown={() => onSelect?.()}
+      onClick={() => onSelect?.()}
     >
       {/* Connector Dot */}
       <div className="block-connector hidden lg:block" />
@@ -510,7 +511,7 @@ export const BlockRenderer = React.memo<BlockRendererProps>(({
       {/* Connector Side Controls */}
       <div className={cn(
         "absolute transition-all flex flex-col gap-2 z-[100]",
-        "-top-14 right-2 md:top-0 md:right-auto md:-left-16 lg:-left-20",
+        "top-2 right-2 md:top-0 md:right-auto md:-left-16 lg:-left-20",
         isSelected 
           ? "opacity-100 scale-100" 
           : "opacity-0 group-hover:opacity-100 scale-90 md:translate-x-1"

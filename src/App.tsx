@@ -117,14 +117,27 @@ export default function App() {
 
   const stripHtml = (html: string) => {
     if (!html) return "";
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    return doc.body.textContent || doc.body.innerText || "";
+    try {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const text = doc.body.textContent || doc.body.innerText || "";
+      // Handle potential double encoding of spaces/entities
+      return text.replace(/\u00A0/g, ' ').trim() || "Senza titolo";
+    } catch (e) {
+      return html.replace(/<[^>]*>?/gm, '').trim() || "Senza titolo";
+    }
+  };
+
+  const resetBook = () => {
+    if (confirm("Sei sicuro di voler resettare il libro? Perderai tutti i progressi non esportati.")) {
+      localStorage.removeItem('linguacraft_book');
+      window.location.reload();
+    }
   };
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-100 text-slate-800 font-sans">
       {/* Top Main Actions Bar */}
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-white/80 backdrop-blur-md border border-slate-200 px-4 py-2 rounded-full shadow-2xl">
+      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 bg-white/90 backdrop-blur-xl border border-slate-200 px-4 py-2 rounded-full shadow-2xl scale-90 md:scale-100">
         <button 
           onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
           className={cn("p-2 rounded-full transition-colors", isLeftSidebarOpen ? "bg-indigo-50 text-indigo-600" : "text-slate-400 hover:bg-slate-50")}
@@ -132,28 +145,36 @@ export default function App() {
         >
           <Search className="w-4 h-4" />
         </button>
-        <div className="w-px h-4 bg-slate-200 mx-2" />
+        <div className="w-px h-4 bg-slate-200 mx-1" />
         <button 
           onClick={() => setIsPreviewOpen(true)}
-          className="flex items-center gap-2 px-4 py-1.5 bg-slate-900 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-black transition-all shadow-lg"
+          className="flex items-center gap-2 px-4 py-1.5 bg-slate-900 text-white rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest hover:scale-105 transition-all shadow-lg active:scale-95"
         >
           <BookOpen className="w-4 h-4" />
           Preview
         </button>
         <button 
           onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-1.5 bg-indigo-600 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg"
+          className="flex items-center gap-2 px-4 py-1.5 bg-indigo-600 text-white rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest hover:scale-105 transition-all shadow-lg active:scale-95"
         >
           <Download className="w-4 h-4" />
-          Esporta
+          Export
         </button>
-        <div className="w-px h-4 bg-slate-200 mx-2" />
+        <div className="w-px h-4 bg-slate-200 mx-1" />
         <button 
           onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
           className={cn("p-2 rounded-full transition-colors", isRightSidebarOpen ? "bg-indigo-50 text-indigo-600" : "text-slate-400 hover:bg-slate-50")}
           title="Toggle Toolbar"
         >
           <Plus className="w-4 h-4" />
+        </button>
+        <div className="w-px h-4 bg-slate-200 mx-1" />
+        <button 
+          onClick={resetBook}
+          className="p-2 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+          title="Reset"
+        >
+          <AlertCircle className="w-4 h-4" />
         </button>
       </div>
 
@@ -166,10 +187,10 @@ export default function App() {
             className="w-72 bg-white border-r border-slate-200 px-6 py-20 flex flex-shrink-0 flex-col gap-8 shadow-2xl z-50 fixed md:relative h-full"
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl italic shadow-indigo-100 shadow-xl">L</div>
+              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl italic shadow-indigo-100 shadow-xl border-2 border-white">L</div>
               <div>
                 <h1 className="text-sm font-black tracking-tight text-slate-900 leading-none">LinguaCraft</h1>
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Architect</span>
+                <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest">v2.1 Updated</span>
               </div>
             </div>
 
