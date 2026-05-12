@@ -5,8 +5,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Book, Block, BlockType } from './types';
-import { Toolbar } from './components/editor/toolbar';
-import { BlockRenderer } from './components/editor/block-renderer';
+import { Toolbar } from './components/toolbar';
+import { BlockRenderer } from './components/block-renderer';
 import { generateId, cn } from './lib/utils';
 import { exportBookToHTML } from './lib/exporter';
 import { motion, AnimatePresence } from 'motion/react';
